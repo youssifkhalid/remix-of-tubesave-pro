@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ApiError,
   buildDownloadUrl,
@@ -9,8 +9,6 @@ import {
   formatBytes,
   formatDuration,
   formatNumber,
-  getApiBase,
-  setApiBase,
   type VideoFormat,
   type VideoInfo,
 } from "@/lib/api";
@@ -23,7 +21,6 @@ import {
   Heart,
   Link2,
   Loader2,
-  Settings2,
   Sparkles,
   ThumbsUp,
   Youtube,
@@ -35,7 +32,6 @@ import {
   Smartphone,
   CheckCircle2,
   AlertCircle,
-  X,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -64,19 +60,10 @@ const PlatformIcon = ({ p, className }: { p: string; className?: string }) => {
 function HomePage() {
   const [url, setUrl] = useState("");
   const [info, setInfo] = useState<VideoInfo | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [apiUrl, setApiUrlLocal] = useState("");
-  const [hasApi, setHasApi] = useState(false);
   const [copied, setCopied] = useState<"desc" | "ok" | null>(null);
-  const [selected, setSelected] = useState<string>(""); // single video: format_id
+  const [selected, setSelected] = useState<string>("");
   const [selectedEntries, setSelectedEntries] = useState<Set<string>>(new Set());
   const [entryFormat, setEntryFormat] = useState<string>("best[height<=720]");
-
-  useEffect(() => {
-    const cur = getApiBase();
-    setApiUrlLocal(cur);
-    setHasApi(!!cur);
-  }, [settingsOpen]);
 
   const mutation = useMutation({
     mutationFn: (u: string) => fetchInfo(u),
@@ -102,10 +89,6 @@ function HomePage() {
 
   const handleFetch = () => {
     if (!url.trim()) return;
-    if (!getApiBase()) {
-      setSettingsOpen(true);
-      return;
-    }
     setInfo(null);
     mutation.mutate(url.trim());
   };
@@ -229,15 +212,6 @@ function HomePage() {
           </div>
         </div>
 
-        {!hasApi && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-right text-xs text-yellow-200">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <p>
-              لتشغيل التنزيل، اضغط على ⚙️ وأضف رابط خادم الـ Backend الخاص بك (FastAPI + yt-dlp).
-            </p>
-          </div>
-        )}
-
         {mutation.isError && (
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-right text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -338,19 +312,6 @@ function HomePage() {
           · {new Date().getFullYear()}
         </p>
       </footer>
-
-      {settingsOpen && (
-        <SettingsDialog
-          value={apiUrl}
-          onChange={setApiUrlLocal}
-          onSave={() => {
-            setApiBase(apiUrl);
-            setHasApi(!!apiUrl);
-            setSettingsOpen(false);
-          }}
-          onClose={() => setSettingsOpen(false)}
-        />
-      )}
     </main>
   );
 }
@@ -641,60 +602,6 @@ function PlaylistView({
         >
           <Download className="h-4 w-4" />
           تنزيل المحدد
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SettingsDialog({
-  value,
-  onChange,
-  onSave,
-  onClose,
-}: {
-  value: string;
-  onChange: (s: string) => void;
-  onSave: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center"
-      onClick={onClose}
-    >
-      <div
-        className="glass w-full max-w-md rounded-2xl p-6 shadow-card"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-black">إعدادات الخادم</h3>
-          <button
-            onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg hover:bg-card"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <p className="mb-3 text-xs text-muted-foreground">
-          ضع رابط خادم الـ Backend الخاص بك (FastAPI + yt-dlp) — مثال:
-          <br />
-          <code dir="ltr" className="text-foreground">
-            https://your-backend.up.railway.app
-          </code>
-        </p>
-        <input
-          dir="ltr"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="https://..."
-          className="w-full rounded-xl border border-border bg-background/60 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]"
-        />
-        <button
-          onClick={onSave}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand py-3 text-sm font-black text-primary-foreground shadow-glow"
-        >
-          حفظ
         </button>
       </div>
     </div>
