@@ -1,29 +1,20 @@
-// Backend API client. The Python FastAPI backend (yt-dlp) must be deployed
-// separately (Railway / Render / VPS) and its URL stored here.
-// Users can override the URL at runtime from the Settings dialog.
+// Backend API client. Backend URL is hardcoded — no user-facing settings.
 
-const STORAGE_KEY = "url_downloader_api_base";
-const DEFAULT_BASE =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) ||
-  "https://remix-of-tubesave-pro-production.up.railway.app";
+const HARDCODED_BASE = "https://remix-of-tubesave-pro-production.up.railway.app";
 
 export function getApiBase(): string {
-  if (typeof window === "undefined") return DEFAULT_BASE;
-  return window.localStorage.getItem(STORAGE_KEY) || DEFAULT_BASE;
+  return HARDCODED_BASE;
 }
 
-export function setApiBase(url: string) {
-  if (typeof window === "undefined") return;
-  const trimmed = url.trim().replace(/\/+$/, "");
-  if (trimmed) window.localStorage.setItem(STORAGE_KEY, trimmed);
-  else window.localStorage.removeItem(STORAGE_KEY);
+export function setApiBase(_url: string) {
+  // No-op: API base is hardcoded and not user-configurable.
 }
 
 export interface VideoFormat {
   format_id: string;
   ext: string;
-  quality: string;        // e.g. "1080p", "720p", "audio"
-  filesize?: number;      // bytes
+  quality: string;
+  filesize?: number;
   vcodec?: string;
   acodec?: string;
   fps?: number;
@@ -38,13 +29,13 @@ export interface VideoInfo {
   thumbnail?: string;
   uploader?: string;
   uploader_url?: string;
-  duration?: number;          // seconds
+  duration?: number;
   view_count?: number;
   like_count?: number;
   webpage_url: string;
-  platform: string;           // youtube, tiktok, instagram, facebook, ...
+  platform: string;
   is_playlist: boolean;
-  entries?: VideoInfo[];      // when playlist
+  entries?: VideoInfo[];
   formats?: VideoFormat[];
 }
 
@@ -54,18 +45,8 @@ export class ApiError extends Error {
   }
 }
 
-async function ensureBase(): Promise<string> {
-  const base = getApiBase();
-  if (!base) {
-    throw new ApiError(
-      "لم يتم ضبط رابط الخادم بعد. افتح الإعدادات وأضف رابط الـ Backend الخاص بك.",
-    );
-  }
-  return base;
-}
-
 export async function fetchInfo(url: string): Promise<VideoInfo> {
-  const base = await ensureBase();
+  const base = HARDCODED_BASE;
   const res = await fetch(`${base}/info?url=${encodeURIComponent(url)}`, {
     headers: { Accept: "application/json" },
   });
@@ -81,8 +62,7 @@ export async function fetchInfo(url: string): Promise<VideoInfo> {
 }
 
 export function buildDownloadUrl(url: string, format: string) {
-  const base = getApiBase();
-  return `${base}/download?url=${encodeURIComponent(url)}&format=${encodeURIComponent(format)}`;
+  return `${HARDCODED_BASE}/download?url=${encodeURIComponent(url)}&format=${encodeURIComponent(format)}`;
 }
 
 export function formatBytes(bytes?: number): string {
