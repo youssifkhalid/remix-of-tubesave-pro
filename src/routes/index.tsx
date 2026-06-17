@@ -166,17 +166,10 @@ function HomePage() {
         <div className="flex shrink-0 items-center gap-2">
           <Link
             to="/about"
-            className="hidden rounded-xl border border-border bg-card/40 px-4 py-2 text-sm font-bold transition-colors hover:bg-card sm:inline-flex"
+            className="inline-flex rounded-xl border border-border bg-card/40 px-3 py-2 text-xs font-bold transition-colors hover:bg-card sm:px-4 sm:text-sm"
           >
             عن المطور
           </Link>
-          <button
-            onClick={() => setSettingsOpen(true)}
-            aria-label="الإعدادات"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card/40 transition-colors hover:bg-card"
-          >
-            <Settings2 className="h-4 w-4" />
-          </button>
         </div>
       </header>
 

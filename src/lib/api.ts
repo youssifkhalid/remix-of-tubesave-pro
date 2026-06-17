@@ -4,7 +4,8 @@
 
 const STORAGE_KEY = "url_downloader_api_base";
 const DEFAULT_BASE =
-  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) || "";
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_API_BASE_URL) ||
+  "https://remix-of-tubesave-pro-production.up.railway.app";
 
 export function getApiBase(): string {
   if (typeof window === "undefined") return DEFAULT_BASE;
