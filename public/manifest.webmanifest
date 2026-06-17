@@ -1,0 +1,28 @@
+{
+  "name": "Url Downloader — تنزيل الفيديوهات",
+  "short_name": "Url Downloader",
+  "description": "تنزيل فيديوهات يوتيوب وتيك توك وفيسبوك وإنستجرام بأعلى جودة وبدون علامة مائية.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "/__l5e/assets-v1/d4507ba2-3912-4835-901b-249d7834a67c/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/__l5e/assets-v1/d4507ba2-3912-4835-901b-249d7834a67c/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["utilities", "productivity", "multimedia"]
+}
