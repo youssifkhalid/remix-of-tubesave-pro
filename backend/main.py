@@ -55,6 +55,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+COOKIE_FILE = "cookies.txt"
+
 
 def _quality_label(f: dict) -> str:
     if f.get("vcodec") == "none":
@@ -87,14 +89,12 @@ def _serialize_formats(info: dict) -> list:
     out = []
     seen = set()
     for f in formats:
-        # Skip storyboards/manifests
         if f.get("ext") in ("mhtml",):
             continue
         if not f.get("url") and not f.get("manifest_url"):
             continue
         has_video = f.get("vcodec") and f.get("vcodec") != "none"
         has_audio = f.get("acodec") and f.get("acodec") != "none"
-        # De-dupe by (height, ext, has_audio)
         key = (f.get("height"), f.get("ext"), bool(has_audio), bool(has_video))
         if key in seen:
             continue
@@ -110,7 +110,6 @@ def _serialize_formats(info: dict) -> list:
             "has_audio": bool(has_audio),
             "has_video": bool(has_video),
         })
-    # Sort: video+audio first by height desc, then video-only, then audio-only
     def sort_key(x):
         if x["has_video"] and x["has_audio"]:
             grp = 0
@@ -146,6 +145,16 @@ def _serialize_info(info: dict, include_formats: bool = True) -> dict:
     }
 
 
+def _base_ydl_opts() -> dict:
+    opts = {
+        "quiet": True,
+        "no_warnings": True,
+    }
+    if os.path.exists(COOKIE_FILE):
+        opts["cookiefile"] = COOKIE_FILE
+    return opts
+
+
 @app.get("/")
 async def root():
     return {"name": "Url Downloader API", "endpoints": ["/info", "/download"]}
@@ -155,10 +164,9 @@ async def root():
 async def get_info(url: str = Query(...), full: int = 0):
     """Return metadata for a single video or a playlist."""
     ydl_opts = {
-        "quiet": True,
+        **_base_ydl_opts(),
         "skip_download": True,
-        "no_warnings": True,
-        "extract_flat": "in_playlist",  # cheap for playlists
+        "extract_flat": "in_playlist",
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -166,7 +174,6 @@ async def get_info(url: str = Query(...), full: int = 0):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"تعذّر قراءة الرابط: {e}")
 
-    # Playlist?
     if info.get("_type") == "playlist" or info.get("entries"):
         entries_in = info.get("entries") or []
         entries_out = []
@@ -175,7 +182,6 @@ async def get_info(url: str = Query(...), full: int = 0):
                 continue
             entry_url = e.get("url") or e.get("webpage_url") or ""
             if entry_url and not entry_url.startswith("http"):
-                # yt-dlp flat playlists sometimes give just an ID
                 entry_url = e.get("webpage_url") or url
             entries_out.append({
                 "id": e.get("id") or "",
@@ -213,13 +219,12 @@ async def download_video(url: str = Query(...), format: str = Query("best")):
         output_template = f"/tmp/{uid}.%(ext)s"
 
         ydl_opts = {
+            **_base_ydl_opts(),
             "format": format,
             "outtmpl": output_template,
-            "quiet": True,
-            "no_warnings": True,
             "merge_output_format": "mp4",
+            "restrictfilenames": True,
         }
-        # If "bestaudio", convert to mp3
         if format.startswith("bestaudio"):
             ydl_opts["postprocessors"] = [{
                 "key": "FFmpegExtractAudio",
@@ -228,10 +233,8 @@ async def download_video(url: str = Query(...), format: str = Query("best")):
             }]
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            title = (info.get("title") or "video").replace("/", "-").replace("\\", "-")
+            ydl.extract_info(url, download=True)
 
-        # Find downloaded file
         path: Optional[str] = None
         for f in os.listdir("/tmp"):
             if f.startswith(uid):
@@ -241,7 +244,7 @@ async def download_video(url: str = Query(...), format: str = Query("best")):
             raise HTTPException(status_code=500, detail="فشل التنزيل.")
 
         ext = path.rsplit(".", 1)[-1]
-        filename = f"{title}.{ext}"
+        filename = f"video.{ext}"
 
         def iterfile():
             try:
